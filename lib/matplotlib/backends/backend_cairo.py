@@ -9,6 +9,7 @@ This backend depends on cairocffi or pycairo.
 import functools
 import gzip
 import math
+import logging
 
 import numpy as np
 
@@ -32,6 +33,9 @@ from matplotlib.backend_bases import (
 from matplotlib.font_manager import ttfFontProperty
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
+
+
+_log = logging.getLogger(__name__)
 
 
 def _set_rgba(ctx, color, alpha, forced_alpha):
@@ -210,8 +214,10 @@ class RendererCairo(RendererBase):
         y = self.height - y - im.shape[0]
 
         ctx.save()
-        ctx.set_source_surface(surface, float(x), float(y))
-        ctx.paint()
+        ctx.set_source_surface(surface, x, y)
+        ctx.new_path()
+        ctx.rectangle(x, y, im.shape[1], im.shape[0])
+        ctx.fill()
         ctx.restore()
 
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
@@ -322,6 +328,31 @@ class GraphicsContextCairo(GraphicsContextBase):
         'round':       cairo.LINE_CAP_ROUND,
     }
 
+    _operatord = {
+        'normal':      cairo.OPERATOR_OVER,
+        'knockout':    cairo.OPERATOR_SOURCE,
+        'erase':       cairo.OPERATOR_DEST_OUT,
+        'clear':       cairo.OPERATOR_CLEAR,
+        'atop':        cairo.OPERATOR_ATOP,
+        'xor':         cairo.OPERATOR_XOR,
+        'plus':        cairo.OPERATOR_ADD,
+        'multiply':    cairo.OPERATOR_MULTIPLY,
+        'screen':      cairo.OPERATOR_SCREEN,
+        'overlay':     cairo.OPERATOR_OVERLAY,
+        'darken':      cairo.OPERATOR_DARKEN,
+        'lighten':     cairo.OPERATOR_LIGHTEN,
+        'color dodge': cairo.OPERATOR_COLOR_DODGE,
+        'color burn':  cairo.OPERATOR_COLOR_BURN,
+        'hard light':  cairo.OPERATOR_HARD_LIGHT,
+        'soft light':  cairo.OPERATOR_SOFT_LIGHT,
+        'difference':  cairo.OPERATOR_DIFFERENCE,
+        'exclusion':   cairo.OPERATOR_EXCLUSION,
+        'hue':         cairo.OPERATOR_HSL_HUE,
+        'saturation':  cairo.OPERATOR_HSL_SATURATION,
+        'color':       cairo.OPERATOR_HSL_COLOR,
+        'luminosity':  cairo.OPERATOR_HSL_LUMINOSITY,
+    }
+
     def __init__(self, renderer):
         super().__init__()
         self.renderer = renderer
@@ -391,6 +422,11 @@ class GraphicsContextCairo(GraphicsContextBase):
     def set_linewidth(self, w):
         self._linewidth = float(w)
         self.ctx.set_line_width(self.renderer.points_to_pixels(w))
+
+    def set_blend_mode(self, blend_mode):
+        super().set_blend_mode(blend_mode)
+        self.ctx.set_operator(_api.getitem_checked(self._operatord,
+                                                   blend_mode=self._blend_mode))
 
 
 class _CairoRegion:
