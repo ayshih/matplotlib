@@ -15,6 +15,7 @@ from PIL import Image
 
 import matplotlib as mpl
 from matplotlib import cbook, font_manager as fm
+from matplotlib.artist import _BLEND_MODES_PDFSPEC
 from matplotlib.backend_bases import (
     _Backend, FigureCanvasBase, FigureManagerBase, RendererBase
 )
@@ -394,6 +395,7 @@ class RendererPgf(RendererBase):
         f = 1. / self.dpi
 
         # set style and clip
+        self._print_pgf_blend(gc)
         self._print_pgf_clip(gc)
         self._print_pgf_path_styles(gc, rgbFace)
 
@@ -426,6 +428,7 @@ class RendererPgf(RendererBase):
         # docstring inherited
         _writeln(self.fh, r"\begin{pgfscope}")
         # draw the path
+        self._print_pgf_blend(gc)
         self._print_pgf_clip(gc)
         self._print_pgf_path_styles(gc, rgbFace)
         self._print_pgf_path(gc, path, transform, rgbFace)
@@ -439,6 +442,7 @@ class RendererPgf(RendererBase):
             self._print_pgf_path_styles(gc, rgbFace)
 
             # combine clip and path for clipping
+            self._print_pgf_blend(gc)
             self._print_pgf_clip(gc)
             self._print_pgf_path(gc, path, transform, rgbFace)
             _writeln(self.fh, r"\pgfusepath{clip}")
@@ -474,6 +478,14 @@ class RendererPgf(RendererBase):
                 _writeln(self.fh, r"\pgfsys@transformshift{0in}{1in}")
 
             _writeln(self.fh, r"\end{pgfscope}")
+
+    def _print_pgf_blend(self, gc):
+        if (blend_mode := gc.get_blend_mode()) not in _BLEND_MODES_PDFSPEC:
+            _log.warning(f"The '{blend_mode}' blend mode is not supported by the "
+                         f"PGF backend. Falling back to the 'normal' blend mode.")
+            blend_mode = "normal"
+        if blend_mode != "normal":
+            _writeln(self.fh, r"\pgfsetblendmode{%s}" % blend_mode)
 
     def _print_pgf_clip(self, gc):
         f = 1. / self.dpi
@@ -648,6 +660,7 @@ class RendererPgf(RendererBase):
 
         # reference the image in the pgf picture
         _writeln(self.fh, r"\begin{pgfscope}")
+        self._print_pgf_blend(gc)
         self._print_pgf_clip(gc)
         f = 1. / self.dpi  # from display coords to inch
         if transform is None:
@@ -680,6 +693,7 @@ class RendererPgf(RendererBase):
         s = _escape_and_apply_props(s, prop)
 
         _writeln(self.fh, r"\begin{pgfscope}")
+        self._print_pgf_blend(gc)
         self._print_pgf_clip(gc)
 
         alpha = gc.get_alpha()
