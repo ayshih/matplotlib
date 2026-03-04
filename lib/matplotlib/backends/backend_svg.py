@@ -339,6 +339,7 @@ class RendererSVG(RendererBase):
         self._hatchd = {}
         self._has_gouraud = False
         self._n_gradients = 0
+        self._group_states = []
 
         super().__init__()
         self._glyph_map = dict()
@@ -685,16 +686,45 @@ class RendererSVG(RendererBase):
             writer.end('clipPath')
         writer.end('defs')
 
+    def _open_group(self, s, *, gid=None, blend_mode=None, alpha=None):
+        self._group_states.append((s, blend_mode))
+        if gid is None:
+            self._groupd[s] = self._groupd.get(s, 0) + 1
+            gid = f"{s}_{self._groupd[s]:d}"
+
+        attrib = {'id': gid}
+        if blend_mode is not None and alpha is not None:
+            attrib['style'] = ("isolation: isolate; "
+                               f"mix-blend-mode: {_svg_blend_mode(blend_mode)}; "
+                               f"opacity: {alpha}")
+
+        self.writer.start('g', attrib=attrib)
+
     def open_group(self, s, gid=None):
         # docstring inherited
-        if gid:
-            self.writer.start('g', id=gid)
-        else:
-            self._groupd[s] = self._groupd.get(s, 0) + 1
-            self.writer.start('g', id=f"{s}_{self._groupd[s]:d}")
+        self._open_group(s, gid=gid)
 
     def close_group(self, s):
         # docstring inherited
+        current_s, blend_mode = self._group_states.pop()
+        if s != current_s:
+            raise RuntimeError(f"Cannot close group element '{s}' because the open "
+                               f"group element is '{current_s}'.")
+        if blend_mode is not None:
+            raise RuntimeError(f"Cannot close group element '{s}' because it includes "
+                               "a blend group that has not been closed.")
+        self.writer.end('g')
+
+    def open_blend_group(self, blend_mode, *, alpha=1):
+        #docstring inherited
+        self._open_group('blend', blend_mode=blend_mode, alpha=alpha)
+
+    def close_blend_group(self):
+        # docstring inherited
+        s, blend_mode = self._group_states.pop()
+        if blend_mode is None:
+            raise RuntimeError("Cannot close the blend group because group element "
+                               f"'{s}' is in the group and has not been closed.")
         self.writer.end('g')
 
     def option_image_nocomposite(self):

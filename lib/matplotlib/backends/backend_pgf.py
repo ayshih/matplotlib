@@ -383,6 +383,7 @@ class RendererPgf(RendererBase):
         self.fh = fh
         self.figure = figure
         self.image_counter = 0
+        self._group_blend_modes = []
 
     def draw_markers(self, gc, marker_path, marker_trans, path, trans,
                      rgbFace=None):
@@ -757,6 +758,18 @@ class RendererPgf(RendererBase):
     def points_to_pixels(self, points):
         # docstring inherited
         return points * mpl_pt_to_in * self.dpi
+
+    def open_blend_group(self, blend_mode, *, alpha=1):
+        # TODO: Sanitize blend_mode
+        self._group_blend_modes.append(blend_mode)
+        _writeln(self.fh, r"\pgfsetblendmode{%s}" % blend_mode)
+        _writeln(self.fh, r"\pgfsetfillopacity{%s}" % alpha)
+        _writeln(self.fh, r"\pgftransparencygroup[isolated]")
+
+    def close_blend_group(self):
+        blend_mode = self._group_blend_modes.pop()
+        _writeln(self.fh, r"\endpgftransparencygroup")
+        _writeln(self.fh, r"\pgfsetfillopacity{1}")
 
 
 class FigureCanvasPgf(FigureCanvasBase):

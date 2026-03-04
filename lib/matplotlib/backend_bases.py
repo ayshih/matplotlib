@@ -172,6 +172,31 @@ class RendererBase:
         Only used by the SVG renderer.
         """
 
+    def open_blend_group(self, blend_mode, *, alpha=1):
+        """
+        Open an isolated transparency group for blending.
+
+        Artists within this group are rendered in an separate buffer.  When this group
+        is closed, the isolatd buffer is then drawn as an image into the primary buffer
+        using the specified blend mode and scalar alpha.
+
+        Supported by the Agg, Cairo, PDF, PGF, and SVG renderers.
+
+        Parameters
+        ----------
+        blend_mode : str
+            Draw the isolated buffer into the primary buffer using this blend mode.
+        alpha : float
+            The scalar alpha to additionally apply to the isolated buffer when blending
+            into the primary buffer.
+            Defaults to 1, which means no fading of the isolated buffer.
+        """
+        raise NotImplementedError
+
+    def close_blend_group(self):
+        """Close the isolated transparency group."""
+        raise NotImplementedError
+
     def draw_path(self, gc, path, transform, rgbFace=None):
         """Draw a `~.path.Path` instance using the given affine transform."""
         raise NotImplementedError

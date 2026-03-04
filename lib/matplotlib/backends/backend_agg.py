@@ -68,7 +68,7 @@ class RendererAgg(RendererBase):
         self.width = width
         self.height = height
         self._renderer = _RendererAgg(int(width), int(height), dpi)
-        self._filter_renderers = []
+        self._group_states = []
 
         self._update_methods()
         self.mathtext_parser = MathTextParser('agg')
@@ -320,7 +320,7 @@ class RendererAgg(RendererBase):
         """
         Start filtering. It simply creates a new canvas (the old one is saved).
         """
-        self._filter_renderers.append(self._renderer)
+        self._group_states.append((self._renderer, None, None))
         self._renderer = _RendererAgg(int(self.width), int(self.height),
                                       self.dpi)
         self._update_methods()
@@ -348,7 +348,10 @@ class RendererAgg(RendererBase):
         slice_y, slice_x = cbook._get_nonzero_slices(orig_img[..., 3])
         cropped_img = orig_img[slice_y, slice_x]
 
-        self._renderer = self._filter_renderers.pop()
+        self._renderer, group_blend_mode, alpha = self._group_states.pop()
+        if group_blend_mode is not None:
+            raise RuntimeError("Cannot stop filtering because it includes a blend "
+                               "group that has not been closed.")
         self._update_methods()
 
         if cropped_img.size:
@@ -360,6 +363,32 @@ class RendererAgg(RendererBase):
             self._renderer.draw_image(
                 gc, slice_x.start + ox, int(self.height) - slice_y.stop + oy,
                 img[::-1])
+
+    def open_blend_group(self, blend_mode, *, alpha=1):
+        # docstring inherited
+        self._group_states.append((self._renderer, blend_mode, alpha))
+        self._renderer = _RendererAgg(int(self.width), int(self.height), self.dpi)
+        self._update_methods()
+
+    def close_blend_group(self):
+        # docstring inherited
+        orig_img = np.asarray(self.buffer_rgba())
+        slice_y, slice_x = cbook._get_nonzero_slices(orig_img[..., 3])
+        cropped_img = orig_img[slice_y, slice_x]
+
+        self._renderer, blend_mode, alpha = self._group_states.pop()
+        if blend_mode is None:
+            raise RuntimeError("Cannot close the blend group because it includes a "
+                               "filter that has been started but not yet stopped.")
+        self._update_methods()
+
+        if cropped_img.size:
+            gc = self.new_gc()
+            gc.set_blend_mode(blend_mode)
+            gc.set_alpha(alpha)
+            self._renderer.draw_image(
+                gc, slice_x.start, int(self.height) - slice_y.stop,
+                cropped_img[::-1])
 
 
 class FigureCanvasAgg(FigureCanvasBase):
