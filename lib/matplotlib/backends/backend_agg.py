@@ -69,6 +69,7 @@ class RendererAgg(RendererBase):
         self.height = height
         self._renderer = _RendererAgg(int(width), int(height), dpi)
         self._group_states = []
+        self._contourf_plus_blend_group = True
 
         self._update_methods()
         self.mathtext_parser = MathTextParser('agg')

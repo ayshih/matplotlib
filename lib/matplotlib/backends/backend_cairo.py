@@ -94,6 +94,8 @@ class RendererCairo(RendererBase):
         self._group_states = []
         super().__init__()
 
+        self._contourf_plus_blend_group = True
+
     def set_context(self, ctx):
         surface = ctx.get_target()
         if hasattr(surface, "get_width") and hasattr(surface, "get_height"):
