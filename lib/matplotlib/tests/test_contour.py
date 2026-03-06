@@ -891,3 +891,23 @@ def test_contour_aliases(fig_test, fig_ref):
 def test_contour_singular_color():
     with pytest.raises(TypeError):
         plt.figure().add_subplot().contour([[0, 1], [2, 3]], color="r")
+
+
+@image_comparison(['contourf_antialiasing.png'], style='mpl20')
+def test_contourf_antialiasing():
+    x = np.arange(1, 6)
+    y = x.reshape(-1, 1)
+    data = (x * y).astype(float)
+    data[2, 2] = np.nan
+
+    fig, axs = plt.subplots(1, 3, figsize=(5, 2), layout="constrained")
+
+    for i, antialiased in enumerate([None, False, True]):
+        kwargs = {'cmap': 'jet', 'alpha': 0.5}
+        if antialiased is not None:
+            kwargs['antialiased'] = antialiased
+
+        axs[i].contourf(data, levels=np.arange(1, 25, 1), extend="both", **kwargs)
+
+        axs[i].set_aspect("equal")
+        axs[i].set_axis_off()
