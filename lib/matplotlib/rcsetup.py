@@ -1653,11 +1653,9 @@ _DEFINITION = [
     ),
     _Param(
         "pcolormesh.snap",
-        default=True,
+        default=False,
         validator=validate_bool,
-        description="Whether to snap the mesh to pixel boundaries. This is provided "
-                    "solely to allow old test images to remain unchanged. Set to False "
-                    "to obtain the previous behavior."
+        description="Whether to snap the mesh to pixel boundaries."
     ),
     _Section("Patches"),
     _Param(
