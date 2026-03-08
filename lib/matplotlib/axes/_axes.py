@@ -6662,13 +6662,8 @@ or pandas.DataFrame
         ec = kwargs.setdefault('edgecolors', 'none')
 
         # aa setting will default via collections to patch.antialiased
-        # unless the boundary is not stroked, in which case the
-        # default will be False; with unstroked boundaries, aa
-        # makes artifacts that are often disturbing.
         if 'antialiaseds' in kwargs:
             kwargs['antialiased'] = kwargs.pop('antialiaseds')
-        if 'antialiased' not in kwargs and cbook._str_lower_equal(ec, "none"):
-            kwargs['antialiased'] = False
 
         kwargs.setdefault('snap', False)
 
@@ -6698,7 +6693,7 @@ or pandas.DataFrame
     @_preprocess_data()
     @_docstring.interpd
     def pcolormesh(self, *args, alpha=None, norm=None, cmap=None, vmin=None,
-                   vmax=None, colorizer=None, shading=None, antialiased=False,
+                   vmax=None, colorizer=None, shading=None, antialiased=True,
                    **kwargs):
         """
         Create a pseudocolor plot with a non-regular rectangular grid.

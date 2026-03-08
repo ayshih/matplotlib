@@ -648,9 +648,8 @@ class ContourSet(ContourLabeler, mcoll.Collection):
             Keyword arguments are as described in the docstring of
             `~.Axes.contour`.
         """
-        if antialiased is None and filled:
-            # Eliminate artifacts; we are not stroking the boundaries.
-            antialiased = False
+        if filled:
+            antialiased = mpl._val_or_rc(antialiased, 'patch.antialiased')
             # The default for line contours will be taken from the
             # LineCollection default, which uses :rc:`lines.antialiased`.
         super().__init__(
@@ -1635,8 +1634,8 @@ xunits, yunits : registered units, optional
 
 antialiased : bool, optional
     Enable antialiasing, overriding the defaults.  For
-    filled contours, the default is *False*.  For line contours,
-    it is taken from :rc:`lines.antialiased`.
+    filled contours, the default is taken from :rc:`patch.antialiased`.
+    For line contours, it is taken from :rc:`lines.antialiased`.
 
 nchunk : int >= 0, optional
     If 0, no subdivision of the domain.  Specify a positive integer to
