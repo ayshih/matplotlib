@@ -2227,6 +2227,42 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
                 lastx, lasty = x, y
         output(Op.grestore)
 
+    def draw_quad_mesh(self, gc, master_transform, meshWidth, meshHeight,
+                       coordinates, offsets, offsetTrans, facecolors,
+                       antialiased, edgecolors):
+        # Use the fallback drawing of each quad as a path if edges are stroked
+        if (edgecolors.size != 0 and edgecolors[0][3] != 0):
+            super().draw_quad_mesh(gc, master_transform, meshWidth, meshHeight,
+                                   coordinates, offsets, offsetTrans, facecolors,
+                                   antialiased, edgecolors)
+            return
+
+        # Otherwise, leverage the Gouraud code path with each triangle having
+        # three vertices of the same color, but common vertices of adjacent
+        # triangles can have different colors
+
+        if isinstance(coordinates, np.ma.MaskedArray):
+            p = coordinates.data
+        else:
+            p = coordinates
+
+        # TODO: adjust for offsets and offsetTrans
+
+        p_a = p[:-1, :-1]
+        p_b = p[:-1, 1:]
+        p_c = p[1:, 1:]
+        p_d = p[1:, :-1]
+        triangles = np.concatenate([
+            p_a, p_b, p_c,
+            p_c, p_a, p_d,
+        ], axis=2).reshape((-1, 3, 2))
+
+        colors = np.repeat(facecolors, 6, axis=0).reshape((-1, 3, 4))
+        empty = (colors[:, 0, 3] == 0)
+
+        self.draw_gouraud_triangles(gc, triangles[~empty], colors[~empty],
+                                    master_transform)
+
     def draw_gouraud_triangles(self, gc, points, colors, trans):
         assert len(points) == len(colors)
         if len(points) == 0:
