@@ -554,7 +554,6 @@ class PathSnapper
   private:
     VertexSource *m_source;
     bool m_snap;
-    double m_snap_value;
 
     static bool should_snap(VertexSource &path, e_snap_mode snap_mode, unsigned total_vertices)
     {
@@ -613,11 +612,6 @@ class PathSnapper
     {
         m_snap = should_snap(source, snap_mode, total_vertices);
 
-        if (m_snap) {
-            int is_odd = mpl_round_to_int(stroke_width) % 2;
-            m_snap_value = (is_odd) ? 0.5 : 0.0;
-        }
-
         source.rewind(0);
     }
 
@@ -631,8 +625,8 @@ class PathSnapper
         unsigned code;
         code = m_source->vertex(x, y);
         if (m_snap && agg::is_vertex(code)) {
-            *x = floor(*x + 0.5) + m_snap_value;
-            *y = floor(*y + 0.5) + m_snap_value;
+            *x = floor(*x + 0.5);
+            *y = floor(*y + 0.5);
         }
         return code;
     }
