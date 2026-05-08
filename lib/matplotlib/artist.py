@@ -209,6 +209,7 @@ Supported properties are
         self._animated = False
         self._alpha = None
         self._blend_mode = "normal"
+        self._fill_rule = "nonzero"
         self.clipbox = None
         self._clippath = None
         self._clipon = True
@@ -1242,6 +1243,7 @@ Supported properties are
         self._visible = other._visible
         self._alpha = other._alpha
         self._blend_mode = other._blend_mode
+        self._fill_rule = other._fill_rule
         self.clipbox = other.clipbox
         self._clipon = other._clipon
         self._clippath = other._clippath
@@ -1506,6 +1508,14 @@ Supported properties are
     def get_blend_mode(self):
         """Return the blend mode for compositing - not supported on all backends."""
         return self._blend_mode
+
+    def set_fill_rule(self, fill_rule):
+        if fill_rule not in {"nonzero", "evenodd"}:
+            raise ValueError
+        self._fill_rule = fill_rule
+
+    def get_fill_rule(self):
+        return self._fill_rule
 
 
 def _get_tightbbox_for_layout_only(obj, *args, **kwargs):

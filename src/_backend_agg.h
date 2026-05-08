@@ -439,8 +439,6 @@ RendererAgg::draw_path(GCAgg &gc, PathIterator &path, agg::trans_affine &trans, 
         face = color;
     }
 
-    pixFmt.comp_op(gc.comp_op);
-
     theRasterizer.reset_clipping();
     rendererBase.reset_clipping(true);
     set_clipbox(gc.cliprect, theRasterizer);
@@ -465,8 +463,12 @@ RendererAgg::draw_path(GCAgg &gc, PathIterator &path, agg::trans_affine &trans, 
     auto sketch = Sketch{
         curve, gc.sketch.scale, gc.sketch.length, gc.sketch.randomness};
 
+    pixFmt.comp_op(gc.comp_op);
+    theRasterizer.filling_rule(gc.filling_rule);
+
     _draw_path(sketch, has_clippath, face, gc);
 
+    theRasterizer.filling_rule(agg::fill_non_zero);
     pixFmt.comp_op(agg::comp_op_src_over);
 }
 
