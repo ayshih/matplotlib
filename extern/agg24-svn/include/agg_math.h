@@ -182,8 +182,13 @@ namespace agg
         double dx = x2 - x1;
         double dy = y2 - y1;
         double d = sqrt(dx*dx + dy*dy); 
+#ifndef MPL_FIX_AGG_NAN_CONVERSION_WORKAROUND
         *x =  thickness * dy / d;
         *y = -thickness * dx / d;
+#else
+        *x = (dy != 0 ? thickness * dy / d : 0);
+        *y = (dx != 0 ? -thickness * dx / d : 0);
+#endif
     }
 
     //--------------------------------------------------------dilate_triangle
