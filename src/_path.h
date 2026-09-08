@@ -119,7 +119,7 @@ void point_in_path_impl(PointArray &points, PathIterator &path, ResultArray &ins
     assert(safe_first_shape(inside_flag) >= n);
 
     std::vector<uint8_t> yflag0(n);
-    std::vector<uint8_t> subpath_flag(n);
+    std::vector<int8_t> subpath_count(n);
 
     path.rewind(0);
 
@@ -147,7 +147,7 @@ void point_in_path_impl(PointArray &points, PathIterator &path, ResultArray &ins
                 // get test bit for above/below X axis
                 yflag0[i] = (vty0 >= ty);
 
-                subpath_flag[i] = 0;
+                subpath_count[i] = 0;
             }
         }
 
@@ -193,7 +193,7 @@ void point_in_path_impl(PointArray &points, PathIterator &path, ResultArray &ins
                     // Haigh-Hutchinson's different polygon inclusion
                     // tests.
                     if (((vty1 - ty) * (vtx0 - vtx1) >= (vtx1 - tx) * (vty0 - vty1)) == yflag1) {
-                        subpath_flag[i] ^= 1;
+                        subpath_count[i] += (yflag1 ? 1 : -1);
                     }
                 }
 
@@ -222,19 +222,24 @@ void point_in_path_impl(PointArray &points, PathIterator &path, ResultArray &ins
             yflag1 = (vty1 >= ty);
             if (yflag0[i] != yflag1) {
                 if (((vty1 - ty) * (vtx0 - vtx1) >= (vtx1 - tx) * (vty0 - vty1)) == yflag1) {
-                    subpath_flag[i] = subpath_flag[i] ^ true;
+                    subpath_count[i] += (yflag1 ? 1 : -1);
                 }
             }
-            inside_flag[i] |= subpath_flag[i];
-            if (inside_flag[i] == 0) {
-                all_done = false;
-            }
+            inside_flag[i] += subpath_count[i];
+            //if (inside_flag[i] == 0) {
+            //    all_done = false;
+            //}
         }
 
-        if (all_done) {
-            break;
-        }
+        //if (all_done) {
+        //    break;
+        //}
     } while (code != agg::path_cmd_stop);
+
+    for (i = 0; i < n; ++i) {
+        //inside_flag[i] = inside_flag[i] % 2;
+        inside_flag[i] = inside_flag[i] != 0;
+    }
 }
 
 template <class PathIterator, class PointArray, class ResultArray>

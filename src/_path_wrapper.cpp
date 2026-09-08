@@ -47,7 +47,7 @@ Py_points_in_path(py::array_t<double> points_obj, double r, mpl::PathIterator pa
     auto points = convert_points(points_obj);
 
     py::ssize_t dims[] = { points.shape(0) };
-    py::array_t<uint8_t> results(dims);
+    py::array_t<int8_t> results(dims);
     auto results_mutable = results.mutable_unchecked<1>();
 
     points_in_path(points, r, path, trans, results_mutable);
