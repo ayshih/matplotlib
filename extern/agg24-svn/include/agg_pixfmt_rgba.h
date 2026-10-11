@@ -1159,7 +1159,7 @@ namespace agg
     };
 #endif
 
-#ifdef MPL_ADD_AGG_HSL_BLEND_MODES
+#ifdef MPL_ADD_AGG_BLEND_MODES
     // These four blend modes are implemented per the PDF specification
     // (e.g., pages 327-328 of Section 11.3.5 of the PDF 1.7 specification,
     // which is formally ISO 32000-1:2008, with a free version available at
@@ -1253,6 +1253,69 @@ namespace agg
             set(p, comp);
         }
     };
+
+
+    // These two blend modes ...
+
+    //=====================================================comp_op_rgba_max_cover
+    template<class ColorT, class Order>
+    struct comp_op_rgba_max_cover : blender_base<ColorT, Order>
+    {
+        typedef ColorT color_type;
+        typedef typename color_type::value_type value_type;
+        using blender_base<ColorT, Order>::get;
+        using blender_base<ColorT, Order>::set;
+
+        static AGG_INLINE void blend_pix(value_type* p,
+            value_type r, value_type g, value_type b, value_type a, cover_type cover)
+        {
+            rgba s = get(r, g, b, a, cover);
+            if (s.a > 0)
+            {
+                rgba d = get(p);
+                if (s.a == 1 || d.a == 0) {
+                    set(p, s);
+                }
+                else
+                {
+                    d.demultiply();
+                    d.a = sd_min(1 - s.a, d.a);
+                    d.premultiply();
+                    set(p, d + s);
+                }
+            }
+        }
+    };
+
+    //=====================================================comp_op_rgba_min_cover
+    template<class ColorT, class Order>
+    struct comp_op_rgba_min_cover : blender_base<ColorT, Order>
+    {
+        typedef ColorT color_type;
+        typedef typename color_type::value_type value_type;
+        using blender_base<ColorT, Order>::get;
+        using blender_base<ColorT, Order>::set;
+
+        static AGG_INLINE void blend_pix(value_type* p,
+            value_type r, value_type g, value_type b, value_type a, cover_type cover)
+        {
+            rgba s = get(r, g, b, a, cover);
+            if (s.a > 0)
+            {
+                rgba d = get(p);
+                if (s.a == 1 || d.a == 0) {
+                    set(p, s);
+                }
+                else
+                {
+                    d.demultiply();
+                    d.a = sd_max(d.a - s.a, 0.);
+                    d.premultiply();
+                    set(p, d + s);
+                }
+            }
+        }
+    };
 #endif
 
 
@@ -1304,11 +1367,14 @@ namespace agg
         //comp_op_rgba_invert     <ColorT,Order>::blend_pix,
         //comp_op_rgba_invert_rgb <ColorT,Order>::blend_pix,
 
-#ifdef MPL_ADD_AGG_HSL_BLEND_MODES
+#ifdef MPL_ADD_AGG_BLEND_MODES
         comp_op_rgba_hsl_hue        <ColorT,Order>::blend_pix,
         comp_op_rgba_hsl_saturation <ColorT,Order>::blend_pix,
         comp_op_rgba_hsl_color      <ColorT,Order>::blend_pix,
         comp_op_rgba_hsl_luminosity <ColorT,Order>::blend_pix,
+
+        comp_op_rgba_max_cover      <ColorT,Order>::blend_pix,
+        comp_op_rgba_min_cover      <ColorT,Order>::blend_pix,
 #endif
 
         0
@@ -1347,11 +1413,14 @@ namespace agg
         //comp_op_invert,        //----comp_op_invert
         //comp_op_invert_rgb,    //----comp_op_invert_rgb
 
-#ifdef MPL_ADD_AGG_HSL_BLEND_MODES
+#ifdef MPL_ADD_AGG_BLEND_MODES
         comp_op_hsl_hue,
         comp_op_hsl_saturation,
         comp_op_hsl_color,
         comp_op_hsl_luminosity,
+
+        comp_op_max_cover,
+        comp_op_min_cover,
 #endif
 
         end_of_comp_op_e
